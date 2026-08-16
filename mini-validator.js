@@ -71,6 +71,34 @@
  */
 
 function createMiniValidator() {
+  // ES3/ES5 compatibility helpers
+  var _isArray = Array.isArray || function (a) {
+    return Object.prototype.toString.call(a) === "[object Array]";
+  };
+
+  var _objectKeys = Object.keys || function (obj) {
+    var res = [];
+    for (var k in obj) {
+      if (Object.prototype.hasOwnProperty.call(obj, k)) res.push(k);
+    }
+    return res;
+  };
+
+  var _isNaNNumber = (typeof Number.isNaN === "function") ? Number.isNaN : function (v) {
+    return typeof v === "number" && isNaN(v);
+  };
+
+  var _isInteger = (typeof Number.isInteger === "function") ? Number.isInteger : function (n) {
+    return typeof n === "number" && isFinite(n) && Math.floor(n) === n;
+  };
+
+  var _getRegExpFlags = function (pattern) {
+    var f = "";
+    if (pattern.global) f += "g";
+    if (pattern.ignoreCase) f += "i";
+    if (pattern.multiline) f += "m";
+    return f;
+  };
   /**
    * @typedef {Object} StringConstraints
    * @property {number} [minLength]
@@ -363,7 +391,8 @@ function createMiniValidator() {
    * @returns {boolean}
    */
   function _testPattern(pattern, value) {
-    const re = new RegExp(pattern.source, pattern.flags);
+    var flags = _getRegExpFlags(pattern);
+    var re = new RegExp(pattern.source, flags);
     return re.test(value);
   }
 
@@ -378,7 +407,7 @@ function createMiniValidator() {
       return [_issue(path, "string.base", "Expected string", "string", value)];
     }
 
-    const c = schema.c;
+    var c = schema.c;
     if (!c) return [];
 
     if (c.minLength != null && value.length < c.minLength) {
@@ -427,14 +456,14 @@ function createMiniValidator() {
    * @returns {ValidationIssue[]}
    */
   function _visitNumber(schema, value, path) {
-    if (typeof value !== "number" || Number.isNaN(value)) {
+    if (typeof value !== "number" || _isNaNNumber(value)) {
       return [_issue(path, "number.base", "Expected number", "number", value)];
     }
 
-    const c = schema.c;
+    var c = schema.c;
     if (!c) return [];
 
-    if (c.integer && !Number.isInteger(value)) {
+    if (c.integer && !_isInteger(value)) {
       return [
         _issue(
           path,
@@ -557,10 +586,10 @@ function createMiniValidator() {
     }
 
     /** @type {ValidationIssue[]} */
-    const issues = [];
-    for (let i = 0; i < value.length; i++) {
-      const childIssues = _visit(schema.i, value[i], path + "[" + i + "]");
-      for (let j = 0; j < childIssues.length; j++) {
+    var issues = [];
+    for (var i = 0; i < value.length; i++) {
+      var childIssues = _visit(schema.i, value[i], path + "[" + i + "]");
+      for (var j = 0; j < childIssues.length; j++) {
         issues.push(childIssues[j]);
       }
     }
@@ -583,17 +612,17 @@ function createMiniValidator() {
       return [_issue(path, "schema.invalid", "Invalid schema", null, schema)];
     }
 
-    if (!value || typeof value !== "object" || Array.isArray(value)) {
+    if (!value || typeof value !== "object" || _isArray(value)) {
       return [_issue(path, "object.base", "Expected object", "object", value)];
     }
 
     /** @type {ValidationIssue[]} */
-    const issues = [];
-    const keys = Object.keys(schema.s);
+    var issues = [];
+    var keys = _objectKeys(schema.s);
 
-    for (let i = 0; i < keys.length; i++) {
-      const key = keys[i];
-      const childPath = _joinPath(path, key);
+    for (var i = 0; i < keys.length; i++) {
+      var key = keys[i];
+      var childPath = _joinPath(path, key);
 
       if (!_hasOwn(value, key)) {
         if (!_allowsMissing(schema.s[key])) {
@@ -610,15 +639,15 @@ function createMiniValidator() {
         continue;
       }
 
-      const childIssues = _visit(schema.s[key], value[key], childPath);
-      for (let j = 0; j < childIssues.length; j++) {
+      var childIssues = _visit(schema.s[key], value[key], childPath);
+      for (var j = 0; j < childIssues.length; j++) {
         issues.push(childIssues[j]);
       }
     }
 
-    const actualKeys = Object.keys(value);
-    for (let i = 0; i < actualKeys.length; i++) {
-      const key = actualKeys[i];
+    var actualKeys = _objectKeys(value);
+    for (var i = 0; i < actualKeys.length; i++) {
+      var key = actualKeys[i];
       if (_hasOwn(schema.s, key)) {
         continue;
       }
@@ -654,18 +683,18 @@ function createMiniValidator() {
       return [_issue(path, "schema.invalid", "Invalid schema", null, schema)];
     }
 
-    if (!value || typeof value !== "object" || Array.isArray(value)) {
+    if (!value || typeof value !== "object" || _isArray(value)) {
       return [_issue(path, "object.base", "Expected object", "object", value)];
     }
 
     /** @type {ValidationIssue[]} */
-    const issues = [];
-    const keys = Object.keys(schema.s);
+    var issues = [];
+    var keys = _objectKeys(schema.s);
 
-    for (let i = 0; i < keys.length; i++) {
-      const key = keys[i];
-      const childIssues = _visit(schema.s[key], value[key], _joinPath(path, key));
-      for (let j = 0; j < childIssues.length; j++) {
+    for (var i = 0; i < keys.length; i++) {
+      var key = keys[i];
+      var childIssues = _visit(schema.s[key], value[key], _joinPath(path, key));
+      for (var j = 0; j < childIssues.length; j++) {
         issues.push(childIssues[j]);
       }
     }
@@ -690,25 +719,25 @@ function createMiniValidator() {
       return [_issue(path, "schema.invalid", "Invalid schema", null, schema)];
     }
 
-    if (!value || typeof value !== "object" || Array.isArray(value)) {
+    if (!value || typeof value !== "object" || _isArray(value)) {
       return [_issue(path, "record.base", "Expected record", "record", value)];
     }
 
     /** @type {ValidationIssue[]} */
-    const issues = [];
-    const keys = Object.keys(value);
+    var issues = [];
+    var keys = _objectKeys(value);
 
-    for (let i = 0; i < keys.length; i++) {
-      const key = keys[i];
-      const childPath = _joinPath(path, key);
+    for (var i = 0; i < keys.length; i++) {
+      var key = keys[i];
+      var childPath = _joinPath(path, key);
 
-      const keyIssues = _visit(schema.ks, key, path);
-      for (let j = 0; j < keyIssues.length; j++) {
+      var keyIssues = _visit(schema.ks, key, path);
+      for (var j = 0; j < keyIssues.length; j++) {
         issues.push(keyIssues[j]);
       }
 
-      const valueIssues = _visit(schema.vs, value[key], childPath);
-      for (let j = 0; j < valueIssues.length; j++) {
+      var valueIssues = _visit(schema.vs, value[key], childPath);
+      for (var j = 0; j < valueIssues.length; j++) {
         issues.push(valueIssues[j]);
       }
     }
@@ -764,14 +793,14 @@ function createMiniValidator() {
     }
 
     /** @type {ValidationIssue[]} */
-    const issues = [];
+    var issues = [];
 
-    const innerIssues = _visit(schema.i, value, path);
+    var innerIssues = _visit(schema.i, value, path);
     if (innerIssues.length === 0) {
       return [];
     }
 
-    for (let i = 0; i < innerIssues.length; i++) {
+    for (var i = 0; i < innerIssues.length; i++) {
       issues.push(innerIssues[i]);
     }
 
@@ -797,7 +826,7 @@ function createMiniValidator() {
    * @returns {ValidationIssue[]}
    */
   function _visit(schema, value, path) {
-    if (Array.isArray(schema)) {
+    if (_isArray(schema)) {
       return _visitUnion(schema, value, path);
     }
 
